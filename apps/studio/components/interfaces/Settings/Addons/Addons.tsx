@@ -15,6 +15,7 @@ import {
   IconAlertTriangle,
   IconChevronRight,
   IconExternalLink,
+  IconInfo,
 } from 'ui'
 
 import {
@@ -48,6 +49,7 @@ import ComputeInstanceSidePanel from './ComputeInstanceSidePanel'
 import CustomDomainSidePanel from './CustomDomainSidePanel'
 import PITRSidePanel from './PITRSidePanel'
 import IPv4SidePanel from './IPv4SidePanel'
+import { capitalize } from 'lodash'
 
 const Addons = () => {
   const { resolvedTheme } = useTheme()
@@ -99,7 +101,33 @@ const Addons = () => {
   const selectedAddons = addons?.selected_addons ?? []
   const { computeInstance, pitr, customDomain, ipv4 } = getAddons(selectedAddons)
 
-  const meta = computeInstance?.variant?.meta as ProjectAddonVariantMeta | undefined
+  const meta = useMemo(() => {
+    const computeMeta = computeInstance?.variant?.meta as ProjectAddonVariantMeta | undefined
+
+    if (!computeMeta && selectedProject?.infra_compute_size === 'nano') {
+      return {
+        baseline_disk_io_mbs: 43,
+        connections_direct: 30,
+        connections_pooler: 200,
+        cpu_cores: 2,
+        cpu_dedicated: false,
+        max_disk_io_mbs: 2085,
+        memory_gb: 0.5,
+      }
+    } else if (selectedProject?.infra_compute_size === 'micro') {
+      return {
+        baseline_disk_io_mbs: 87,
+        connections_direct: 60,
+        connections_pooler: 200,
+        cpu_cores: 2,
+        cpu_dedicated: false,
+        max_disk_io_mbs: 2085,
+        memory_gb: 1,
+      }
+    }
+
+    return computeMeta
+  }, [selectedProject, computeInstance])
 
   return (
     <>
@@ -155,11 +183,23 @@ const Addons = () => {
 
       {isSuccess && (
         <>
+          {selectedProject?.infra_compute_size === 'nano' && subscription?.plan.id !== 'free' && (
+            <ScaffoldContainer className="mt-4">
+              <Alert_Shadcn_ variant="default">
+                <IconInfo strokeWidth={2} />
+                <AlertTitle_Shadcn_>Free compute upgrade to Micro</AlertTitle_Shadcn_>
+                <AlertDescription_Shadcn_>
+                  Paid Plans include a free upgrade to Micro compute. Your project is ready to
+                  upgrade for no additional charges.
+                </AlertDescription_Shadcn_>
+              </Alert_Shadcn_>
+            </ScaffoldContainer>
+          )}
           <ScaffoldContainer>
             <ScaffoldSection>
               <ScaffoldSectionDetail>
                 <div className="space-y-6">
-                  <p className="m-0">Optimized compute</p>
+                  <p className="m-0">Compute Size</p>
                   <div className="space-y-2">
                     <p className="text-sm text-foreground-light m-0">More information</p>
                     <div>
@@ -194,15 +234,15 @@ const Addons = () => {
                   <div>
                     <div className="rounded-md bg-surface-100 border border-muted w-[160px] h-[96px] overflow-hidden">
                       <Image
-                        alt="Optimized Compute"
+                        alt="Compute size"
                         width={160}
                         height={96}
                         src={
-                          computeInstance !== undefined
-                            ? `${BASE_PATH}/img/optimized-compute-on${
+                          ['nano', 'micro'].includes(selectedProject?.infra_compute_size || 'micro')
+                            ? `${BASE_PATH}/img/optimized-compute-off${
                                 resolvedTheme?.includes('dark') ? '' : '--light'
                               }.svg`
-                            : `${BASE_PATH}/img/optimized-compute-off${
+                            : `${BASE_PATH}/img/optimized-compute-on${
                                 resolvedTheme?.includes('dark') ? '' : '--light'
                               }.svg`
                         }
@@ -211,7 +251,11 @@ const Addons = () => {
                   </div>
                   <div className="flex-grow">
                     <p className="text-sm text-foreground-light">Current option:</p>
-                    <p>{computeInstance?.variant.name ?? 'Micro'}</p>
+                    <p>
+                      {computeInstance?.variant.name ??
+                        capitalize(selectedProject?.infra_compute_size) ??
+                        'Micro'}
+                    </p>
                     <ProjectUpdateDisabledTooltip
                       projectUpdateDisabled={projectUpdateDisabled}
                       projectNotActive={!isProjectActive}
