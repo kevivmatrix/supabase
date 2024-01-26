@@ -1,0 +1,19 @@
+{
+  "name": "ui-patterns",
+  "main": "./index.tsx",
+  "types": "./index.tsx",
+  "license": "MIT",
+  "sideEffects": false,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ui": "*"
+  },
+  "devDependencies": {},
+  "peerDependencies": {
+    "next": "*",
+    "react": "*",
+    "react-dom": "*"
+  }
+}
