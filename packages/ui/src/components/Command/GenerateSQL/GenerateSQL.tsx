@@ -1,3 +1,4 @@
+import { useChat } from 'ai/react'
 import { useCallback, useEffect, useState } from 'react'
 import { format } from 'sql-formatter'
 import {
@@ -9,45 +10,70 @@ import {
   Input,
   Tabs,
   Toggle,
+  cn,
 } from 'ui'
+import { v4 as uuidv4 } from 'uuid'
 
-import { MessageRole, MessageStatus, UseAiChatOptions, useAiChat } from '../AiCommand'
+import { MessageRole } from '../AiCommand'
 import { AiWarning, ExcludeSchemaAlert, IncludeSchemaAlert } from '../Command.alerts'
 import { SAMPLE_QUERIES } from '../Command.constants'
 import { AiIcon, AiIconChat } from '../Command.icons'
 import { CommandItem, useAutoInputFocus, useHistoryKeys } from '../Command.utils'
 import { useCommandMenu } from '../CommandMenuProvider'
-import { cn } from './../../../lib/utils'
 import { generatePrompt } from './GenerateSQL.utils'
 import SQLOutputActions from './SQLOutputActions'
 
 const GenerateSQL = () => {
   const [includeSchemaMetadata, setIncludeSchemaMetadata] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<string>(SAMPLE_QUERIES[0].category)
 
-  const { isLoading, setIsLoading, search, setSearch, isOptedInToAI, metadata, project } =
+  const { isLoading, setIsLoading, search, setSearch, isOptedInToAI, metadata, project, site } =
     useCommandMenu()
+  let basePath = ''
+  if (site === 'studio') {
+    basePath = '/dashboard'
+  }
+  if (site === 'docs') {
+    basePath = '/docs'
+  }
+  const [chatId, setChatId] = useState(uuidv4())
 
   const { flags, definitions } = metadata || {}
   const allowSendingSchemaMetadata =
     project?.ref !== undefined && flags?.allowCMDKDataOptIn && isOptedInToAI
 
-  const messageTemplate = useCallback<NonNullable<UseAiChatOptions['messageTemplate']>>(
-    (message) =>
-      generatePrompt(message, isOptedInToAI && includeSchemaMetadata ? definitions : undefined),
-    [isOptedInToAI, includeSchemaMetadata, definitions]
-  )
-
-  const { submit, reset, messages, isResponding, hasError } = useAiChat({
-    messageTemplate,
-    setIsLoading,
+  const {
+    messages,
+    append,
+    isLoading: isResponding,
+    error,
+  } = useChat({
+    id: `${chatId}`,
+    api: `${basePath}/api/ai/docs`,
   })
+  const submit = (query: string) => {
+    append({
+      content: generatePrompt(
+        query,
+        isOptedInToAI && includeSchemaMetadata ? definitions : undefined
+      ),
+      role: 'user',
+      createdAt: new Date(),
+    })
+  }
+
+  const chatMessages = messages.filter((m) => ['user', 'assistant'].includes(m.role))
 
   const inputRef = useAutoInputFocus()
 
+  useEffect(() => {
+    if (isLoading !== isResponding) {
+      setIsLoading(isResponding)
+    }
+  }, [isLoading, isResponding])
+
   useHistoryKeys({
     enable: !isResponding,
-    messages: messages
+    messages: chatMessages
       .filter(({ role }) => role === MessageRole.User)
       .map(({ content }) => content),
     setPrompt: setSearch,
@@ -63,8 +89,9 @@ const GenerateSQL = () => {
 
   const handleReset = useCallback(() => {
     setSearch('')
-    reset()
-  }, [reset])
+    // reset the id of the chat so that all messages are discarded
+    setChatId(uuidv4())
+  }, [])
 
   useEffect(() => {
     if (search) handleSubmit(search)
@@ -92,7 +119,7 @@ const GenerateSQL = () => {
           allowSendingSchemaMetadata ? 'mb-[155px]' : 'mb-[64px]'
         )}
       >
-        {messages.map((message, i) => {
+        {chatMessages.map((message, i) => {
           switch (message.role) {
             case MessageRole.User:
               return (
@@ -117,10 +144,8 @@ const GenerateSQL = () => {
                 .replace(/-- End of SQL query\.*/g, '')
                 .trim()
 
-              const answer =
-                message.status === MessageStatus.Complete
-                  ? formatAnswer(unformattedAnswer)
-                  : unformattedAnswer
+              const answer = isResponding ? unformattedAnswer : formatAnswer(unformattedAnswer)
+
               const cantHelp =
                 answer.replace(/^-- /, '') === "Sorry, I don't know how to help with that."
 
@@ -128,15 +153,10 @@ const GenerateSQL = () => {
                 <div className="px-4 [overflow-anchor:none] mb-[150px]">
                   <div className="flex gap-6 [overflow-anchor:none] mb-6">
                     <div>
-                      <AiIconChat
-                        loading={
-                          message.status === MessageStatus.Pending ||
-                          message.status === MessageStatus.InProgress
-                        }
-                      />
+                      <AiIconChat loading={isLoading} />
                     </div>
                     <>
-                      {message.status === MessageStatus.Pending ? (
+                      {isLoading ? (
                         <div className="bg-border-strong h-[21px] w-[13px] mt-1 animate-bounce"></div>
                       ) : cantHelp ? (
                         <div className="p-6 flex flex-col flex-grow items-center gap-6 mt-4">
@@ -168,8 +188,11 @@ const GenerateSQL = () => {
                             </CodeBlock>
                             <AiWarning className="!rounded-t-none border-muted" />
                           </div>
-                          {message.status === MessageStatus.Complete && (
-                            <SQLOutputActions answer={answer} messages={messages.slice(0, i + 1)} />
+                          {!isLoading && (
+                            <SQLOutputActions
+                              answer={answer}
+                              messages={chatMessages.slice(0, i + 1)}
+                            />
                           )}
                         </div>
                       )}
@@ -179,7 +202,7 @@ const GenerateSQL = () => {
               )
           }
         })}
-        {messages.length === 0 && !hasError && (
+        {chatMessages.length === 0 && !error && (
           <div>
             <div className="px-4">
               <h3 className="text-base text-foreground-light">
@@ -236,7 +259,7 @@ const GenerateSQL = () => {
             </div>
           </div>
         )}
-        {hasError && (
+        {error && (
           <div className="p-6 flex flex-col items-center gap-6 mt-4">
             <IconAlertTriangle className="text-amber-900" strokeWidth={1.5} size={21} />
             <p className="text-lg text-foreground text-center">
@@ -255,7 +278,7 @@ const GenerateSQL = () => {
         {/* {messages.length > 0 && !hasError && <AiWarning className="mb-4 mx-4" />} */}
         {allowSendingSchemaMetadata && (
           <div className="mb-4">
-            {messages.length === 0 ? (
+            {chatMessages.length === 0 ? (
               <div className="flex items-center justify-between px-6 py-3">
                 <div>
                   <p className="text-sm">
