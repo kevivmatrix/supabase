@@ -1,6 +1,5 @@
-import React from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { format } from 'sql-formatter'
-import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Button,
   CodeBlock,
@@ -8,22 +7,19 @@ import {
   IconCornerDownLeft,
   IconUser,
   Input,
-  Toggle,
-  MessageRole,
-  MessageStatus,
-  useAiChat,
   Tabs,
-  UseAiChatOptions,
+  Toggle,
 } from 'ui'
 
-import { cn } from './../../../lib/utils'
+import { MessageRole, MessageStatus, UseAiChatOptions, useAiChat } from '../AiCommand'
+import { AiWarning, ExcludeSchemaAlert, IncludeSchemaAlert } from '../Command.alerts'
+import { SAMPLE_QUERIES } from '../Command.constants'
 import { AiIcon, AiIconChat } from '../Command.icons'
 import { CommandItem, useAutoInputFocus, useHistoryKeys } from '../Command.utils'
 import { useCommandMenu } from '../CommandMenuProvider'
-import { SAMPLE_QUERIES } from '../Command.constants'
-import SQLOutputActions from './SQLOutputActions'
+import { cn } from './../../../lib/utils'
 import { generatePrompt } from './GenerateSQL.utils'
-import { ExcludeSchemaAlert, IncludeSchemaAlert, AiWarning } from '../Command.alerts'
+import SQLOutputActions from './SQLOutputActions'
 
 const GenerateSQL = () => {
   const [includeSchemaMetadata, setIncludeSchemaMetadata] = useState(false)
