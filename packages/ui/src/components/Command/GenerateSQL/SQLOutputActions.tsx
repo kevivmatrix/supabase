@@ -14,6 +14,7 @@ export interface SQLOutputActionsProps {
 }
 
 const SQLOutputActions = ({ answer, messages }: SQLOutputActionsProps) => {
+  const { site } = useCommandMenu()
   const [showCopied, setShowCopied] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
