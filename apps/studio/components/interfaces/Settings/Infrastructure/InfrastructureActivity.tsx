@@ -30,6 +30,7 @@ import { useSelectedOrganization, useSelectedProject } from 'hooks'
 import { TIME_PERIODS_BILLING, TIME_PERIODS_REPORTS } from 'lib/constants/metrics'
 import { INFRA_ACTIVITY_METRICS } from './Infrastructure.constants'
 import { capitalize } from 'lodash'
+import { INSTANCE_MICRO_SPECS, INSTANCE_NANO_SPECS } from 'lib/constants'
 
 const InfrastructureActivity = () => {
   const { ref: projectRef } = useParams()
@@ -51,20 +52,8 @@ const InfrastructureActivity = () => {
   const { computeInstance } = getAddons(selectedAddons)
   const currentComputeInstanceSpecs =
     computeInstance?.variant?.meta ?? project?.infra_compute_size === 'nano'
-      ? {
-          baseline_disk_io_mbs: 43,
-          max_disk_io_mbs: 2085,
-          cpu_cores: 2,
-          cpu_dedicated: false,
-          memory_gb: 0.5,
-        }
-      : {
-          baseline_disk_io_mbs: 87,
-          max_disk_io_mbs: 2085,
-          cpu_cores: 2,
-          cpu_dedicated: false,
-          memory_gb: 1,
-        }
+      ? INSTANCE_NANO_SPECS
+      : INSTANCE_MICRO_SPECS
 
   const currentBillingCycleSelected = useMemo(() => {
     // Selected by default

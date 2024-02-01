@@ -42,7 +42,7 @@ import { useProjectAddonsQuery } from 'data/subscriptions/project-addons-query'
 import { ProjectAddonVariantMeta } from 'data/subscriptions/types'
 import { useFlag, useProjectByRef, useSelectedOrganization } from 'hooks'
 import { getCloudProviderArchitecture } from 'lib/cloudprovider-utils'
-import { BASE_PATH } from 'lib/constants'
+import { BASE_PATH, INSTANCE_MICRO_SPECS, INSTANCE_NANO_SPECS } from 'lib/constants'
 import { getDatabaseMajorVersion, getSemanticVersion } from 'lib/helpers'
 import { SUBSCRIPTION_PANEL_KEYS, useSubscriptionPageStateSnapshot } from 'state/subscription-page'
 import ComputeInstanceSidePanel from './ComputeInstanceSidePanel'
@@ -105,25 +105,9 @@ const Addons = () => {
     const computeMeta = computeInstance?.variant?.meta as ProjectAddonVariantMeta | undefined
 
     if (!computeMeta && selectedProject?.infra_compute_size === 'nano') {
-      return {
-        baseline_disk_io_mbs: 43,
-        connections_direct: 30,
-        connections_pooler: 200,
-        cpu_cores: 2,
-        cpu_dedicated: false,
-        max_disk_io_mbs: 2085,
-        memory_gb: 0.5,
-      }
+      return INSTANCE_NANO_SPECS
     } else if (selectedProject?.infra_compute_size === 'micro') {
-      return {
-        baseline_disk_io_mbs: 87,
-        connections_direct: 60,
-        connections_pooler: 200,
-        cpu_cores: 2,
-        cpu_dedicated: false,
-        max_disk_io_mbs: 2085,
-        memory_gb: 1,
-      }
+      return INSTANCE_MICRO_SPECS
     }
 
     return computeMeta
@@ -279,7 +263,7 @@ const Addons = () => {
                       >
                         <p>
                           Your workload is currently running at the baseline disk IO bandwidth at{' '}
-                          {meta?.baseline_disk_io_mbs?.toLocaleString() ?? 87} Mbps and may suffer
+                          {meta?.baseline_disk_io_mbs?.toLocaleString() ?? '-'} Mbps and may suffer
                           degradation in performance.
                         </p>
                         <p className="mt-1">
@@ -297,7 +281,7 @@ const Addons = () => {
                         <p>
                           If the disk IO budget drops to zero, your workload will run at the
                           baseline disk IO bandwidth at{' '}
-                          {meta?.baseline_disk_io_mbs?.toLocaleString() ?? 87} Mbps and may suffer
+                          {meta?.baseline_disk_io_mbs?.toLocaleString() ?? '-'} Mbps and may suffer
                           degradation in performance.
                         </p>
                         <p className="mt-1">
@@ -320,7 +304,7 @@ const Addons = () => {
                           />
                         </div>
                       </Link>
-                      <p className="text-sm">{meta?.memory_gb ?? 1} GB</p>
+                      <p className="text-sm">{meta?.memory_gb ?? '-'} GB</p>
                     </div>
                     <div className="w-full flex items-center justify-between border-b py-2">
                       <Link href={`/project/${projectRef}/settings/infrastructure#cpu`}>
@@ -336,17 +320,17 @@ const Addons = () => {
                         </div>
                       </Link>
                       <p className="text-sm">
-                        {meta?.cpu_cores ?? 2}-core {cpuArchitecture}{' '}
+                        {meta?.cpu_cores ?? '?'}-core {cpuArchitecture}{' '}
                         {meta?.cpu_dedicated ? '(Dedicated)' : '(Shared)'}
                       </p>
                     </div>
                     <div className="w-full flex items-center justify-between border-b py-2">
                       <p className="text-sm text-foreground-light">No. of direct connections</p>
-                      <p className="text-sm">{meta?.connections_direct ?? 60}</p>
+                      <p className="text-sm">{meta?.connections_direct ?? '-'}</p>
                     </div>
                     <div className="w-full flex items-center justify-between border-b py-2">
                       <p className="text-sm text-foreground-light">No. of pooler connections</p>
-                      <p className="text-sm">{meta?.connections_pooler ?? 200}</p>
+                      <p className="text-sm">{meta?.connections_pooler ?? '-'}</p>
                     </div>
                     <div className="w-full flex items-center justify-between border-b py-2">
                       <Link href={`/project/${projectRef}/settings/infrastructure#disk_io`}>
@@ -362,7 +346,7 @@ const Addons = () => {
                         </div>
                       </Link>
                       <p className="text-sm">
-                        {meta?.max_disk_io_mbs?.toLocaleString() ?? '2,085'} Mbps
+                        {meta?.max_disk_io_mbs?.toLocaleString() ?? '-'} Mbps
                       </p>
                     </div>
                     <div className="w-full flex items-center justify-between py-2">
@@ -379,7 +363,7 @@ const Addons = () => {
                         </div>
                       </Link>
                       <p className="text-sm">
-                        {meta?.baseline_disk_io_mbs?.toLocaleString() ?? 87} Mbps
+                        {meta?.baseline_disk_io_mbs?.toLocaleString() ?? '-'} Mbps
                       </p>
                     </div>
                   </div>

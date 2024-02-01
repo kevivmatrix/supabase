@@ -14,7 +14,7 @@ import { useProjectAddonUpdateMutation } from 'data/subscriptions/project-addon-
 import { useProjectAddonsQuery } from 'data/subscriptions/project-addons-query'
 import { useCheckPermissions, useSelectedOrganization, useStore } from 'hooks'
 import { getCloudProviderArchitecture } from 'lib/cloudprovider-utils'
-import { PROJECT_STATUS } from 'lib/constants'
+import { INSTANCE_MICRO_SPECS, PROJECT_STATUS } from 'lib/constants'
 import Telemetry from 'lib/telemetry'
 import { useSubscriptionPageStateSnapshot } from 'state/subscription-page'
 import {
@@ -139,13 +139,13 @@ const ComputeInstanceSidePanel = () => {
         price_type: 'usage',
         // @ts-ignore API types it as Record<string, never>
         meta: {
-          cpu_cores: 2,
-          cpu_dedicated: false,
-          memory_gb: 1,
-          baseline_disk_io_mbs: 87,
-          max_disk_io_mbs: 2085,
-          connections_direct: 60,
-          connections_pooler: 200,
+          cpu_cores: INSTANCE_MICRO_SPECS.cpu_cores,
+          cpu_dedicated: INSTANCE_MICRO_SPECS.cpu_dedicated,
+          memory_gb: INSTANCE_MICRO_SPECS.memory_gb,
+          baseline_disk_io_mbs: INSTANCE_MICRO_SPECS.baseline_disk_io_mbs,
+          max_disk_io_mbs: INSTANCE_MICRO_SPECS.max_disk_io_mbs,
+          connections_direct: INSTANCE_MICRO_SPECS.connections_direct,
+          connections_pooler: INSTANCE_MICRO_SPECS.connections_pooler,
         } as ProjectAddonVariantMeta,
       })
     }
