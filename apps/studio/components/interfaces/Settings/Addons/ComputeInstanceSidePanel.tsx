@@ -153,8 +153,6 @@ const ComputeInstanceSidePanel = () => {
     return computeOptions
   }, [availableAddons, hasMicroOptionFromApi])
 
-  console.log({ availableOptions })
-
   const defaultInstanceSize = useMemo(() => {
     if (!selectedProject) return ''
 
